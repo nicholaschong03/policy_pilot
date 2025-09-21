@@ -1,0 +1,14 @@
+{
+  "name": "policy-pilot",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n API,WEB -c blue,magenta \"pnpm -C apps/api dev\" \"pnpm -C apps/web dev\"",
+    "dev:api": "pnpm -C apps/api dev",
+    "dev:web": "pnpm -C apps/web dev"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
+
+

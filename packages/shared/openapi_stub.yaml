@@ -1,0 +1,138 @@
+openapi: 3.0.3
+info:
+  title: Policy & Support Copilot API (stub)
+  version: 0.1.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      summary: Liveness check
+      responses:
+        '200':
+          description: OK
+  /kb/upload:
+    post:
+      summary: Upload a document
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Uploaded
+  /kb/ingest/{docId}:
+    post:
+      summary: Ingest a document (extract → chunk → embed)
+      parameters:
+        - in: path
+          name: docId
+          schema: { type: string }
+          required: true
+      responses:
+        '200':
+          description: Ingested
+  /search:
+    get:
+      summary: Search KB
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: top_k
+          schema: { type: integer, default: 5 }
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        doc_id: { type: string }
+                        chunk_idx: { type: integer }
+                        text: { type: string }
+                        score: { type: number }
+  /chat:
+    post:
+      summary: Ask a question grounded in KB (RAG)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string }
+                top_k: { type: integer, default: 8 }
+      responses:
+        '200':
+          description: Answer with citations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answer: { type: string }
+                  citations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        doc: { type: string }
+                        section: { type: string }
+                        snippet: { type: string }
+                  confidence: { type: number }
+                  unanswerable: { type: boolean }
+  /tickets/triage:
+    post:
+      summary: Triage a support ticket and draft a grounded reply
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subject: { type: string }
+                body: { type: string }
+      responses:
+        '200':
+          description: Triage result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  category: { type: string }
+                  priority: { type: string, enum: [High, Medium, Low] }
+                  suggested_reply: { type: string }
+                  supports:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        doc: { type: string }
+                        section: { type: string }
+                        snippet: { type: string }
+                  confidence: { type: number }
+                  action: { type: string, enum: [AUTO_RESOLVE, AUTO_ACK_ONLY, ESCALATE] }
+                  sla:
+                    type: object
+                    properties:
+                      first_response_minutes: { type: integer }
+                      resolution_hours: { type: integer }
+
+
