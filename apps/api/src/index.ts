@@ -20,25 +20,16 @@ const openapiPath = path.resolve(process.cwd(), "../../packages/shared/openapi_s
 const openapiDoc = yaml.load(openapiPath);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
 
-// (Stubs you will replace later)
-app.get("/search", (_req, res) => res.json({ results: [] }));
-app.post("/chat", (_req, res) => res.json({
-  answer: "This is a stubbed answer.",
-  citations: [],
-  confidence: 0.0,
-  unanswerable: false
-}));
-app.post("/tickets/triage", (_req, res) => res.json({
-  category: "Billing",
-  priority: "Low",
-  suggested_reply: "Thanks for reaching out. (stub)",
-  supports: [],
-  confidence: 0.5,
-  action: "AUTO_ACK_ONLY",
-  sla: { first_response_minutes: 60, resolution_hours: 24 }
-}));
+// Routers
+import chatRoutes from "./routes/chat.routes";
+import kbRoutes from "./routes/kb.routes";
+import ticketsRoutes from "./routes/tickets.routes";
 
-const port = process.env.PORT || 3000;
+app.use("/chat", chatRoutes);
+app.use("/", kbRoutes); // exposes GET /search
+app.use("/tickets", ticketsRoutes);
+
+const port = process.env.PORT || 3001;
 app.listen(port, () => {
   // eslint-disable-next-line no-console
   console.log(`API listening on http://localhost:${port}`);

@@ -17,7 +17,7 @@ export default function Triage() {
       <textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Body" style={{ width: "100%", height: 120, padding: 8, marginTop: 8 }} />
       <button onClick={run} style={{ marginTop: 8 }}>Triage</button>
       {res && (
-        <div style={{ marginTop: 16 }}>
+        <div style={{ marginTop: 16 }}> 
           <div><b>Category:</b> {res.category}</div>
           <div><b>Priority:</b> {res.priority}</div>
           <div><b>Action:</b> {res.action}</div>
