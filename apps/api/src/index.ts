@@ -5,6 +5,7 @@ import pinoHttp from "pino-http";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
 import yaml from "yamljs";
+// Type augmentation loaded by TypeScript; no runtime import needed
 
 dotenv.config();
 
@@ -24,16 +25,25 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
 import chatRoutes from "./routes/chat.routes";
 import kbRoutes from "./routes/kb.routes";
 import ticketsRoutes from "./routes/tickets.routes";
+import authRoutes from "./routes/auth.routes";
+import { initAuth } from "./services/auth.service";
 
 app.use("/chat", chatRoutes);
 app.use("/", kbRoutes); // exposes GET /search
 app.use("/tickets", ticketsRoutes);
+app.use("/auth", authRoutes);
 
-const port = process.env.PORT || 3001;
-app.listen(port, () => {
+const port = process.env.PORT || 3000;
+app.listen(port, async () => {
   // eslint-disable-next-line no-console
   console.log(`API listening on http://localhost:${port}`);
   console.log(`Swagger docs at http://localhost:${port}/docs`);
+  try {
+    await initAuth();
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("Auth init failed", e);
+  }
 });
 
 
