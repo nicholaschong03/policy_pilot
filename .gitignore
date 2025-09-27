@@ -1,3 +1,11 @@
-**/node_modules
+# dependencies
+node_modules/
 
+# env files
+.env
+*.env
 **/.env
+**/*.env
+
+# keep a template
+!.env.example
