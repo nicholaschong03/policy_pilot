@@ -2,7 +2,8 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { USE_DB, SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD } from "../config/env";
 import { ensureUserSchema, findUserByEmail, insertUser, getPublicUserById } from "../repos/users.repo.db";
-import type { UserRole, UserRecord, PublicUser } from "../types/auth";
+import { listUsersByRole } from "../repos/users.repo.db";
+import type { UserRole, UserRecord, PublicUser, UserListItem } from "../types/auth";
 
 export type { UserRole, UserRecord, PublicUser };
 
@@ -20,7 +21,7 @@ function getJwtSecret(): string {
 }
 
 export function sanitizeUser(user: UserRecord): PublicUser {
-  return { id: user.id, email: user.email, role: user.role };
+  return { id: user.id, email: user.email, role: user.role, full_name: user.full_name };
 }
 
 export function userStoreIsEmpty(): boolean {
@@ -28,7 +29,7 @@ export function userStoreIsEmpty(): boolean {
 }
 
 //Services
-export async function createUser(args: { email: string; passwordHash: string; role: UserRole }): Promise<PublicUser> {
+export async function createUser(args: { email: string; passwordHash: string; role: UserRole; fullName?: string }): Promise<PublicUser> {
   const email = args.email.toLowerCase();
   // Try DB first
   if (USE_DB) {
@@ -36,13 +37,13 @@ export async function createUser(args: { email: string; passwordHash: string; ro
     const existing = await findUserByEmail(email);
     if (existing) throw new Error("User already exists");
     const id = crypto.randomUUID();
-    return await insertUser({ id, email, passwordHash: args.passwordHash, role: args.role });
+    return await insertUser({ id, email, passwordHash: args.passwordHash, role: args.role, full_name: args.fullName });
   }
   // Fallback to in-memory
   const existing = usersByEmail.get(email);
   if (existing) throw new Error("User already exists");
   const id = crypto.randomUUID();
-  const rec: UserRecord = { id, email, passwordHash: args.passwordHash, role: args.role };
+  const rec: UserRecord = { id, email, passwordHash: args.passwordHash, role: args.role, full_name: args.fullName };
   usersById.set(id, rec);
   usersByEmail.set(email, rec);
   return sanitizeUser(rec);
@@ -115,5 +116,21 @@ export async function initAuth(): Promise<void> {
   await createUser({ email: SEED_ADMIN_EMAIL, passwordHash, role: "admin" });
   // eslint-disable-next-line no-console
   console.log("Seeded admin user (db)", SEED_ADMIN_EMAIL);
+}
+
+export async function listAgents(): Promise<UserListItem[]> {
+  if (USE_DB) {
+    await ensureUserSchema();
+    return await listUsersByRole("agent");
+  }
+  // Fallback to in-memory store
+  const items: UserListItem[] = [];
+  for (const user of usersById.values()) {
+    if (user.role === "agent") {
+      items.push({ id: user.id, email: user.email, role: user.role, full_name: user.full_name });
+    }
+  }
+  // Most recently created first is not tracked in memory; return as-is
+  return items;
 }
 

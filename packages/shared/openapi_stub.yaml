@@ -104,6 +104,33 @@ paths:
         '401': { description: Unauthorized }
       tags: [auth]
 
+  /auth/agents:
+    get:
+      summary: List agent users (admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Agent users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        email: { type: string, format: email }
+                        role: { type: string, enum: [agent, admin] }
+                        full_name: { type: string }
+                        created_at: { type: string, format: date-time }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden }
+      tags: [auth]
+
   /kb/upload:
     post:
       tags: [kb]

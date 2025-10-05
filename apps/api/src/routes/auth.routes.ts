@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getMe, postLogin, postLogout, postRegister } from "../controllers/auth.controller";
+import { getMe, postLogin, postLogout, postRegister, getAgents } from "../controllers/auth.controller";
 import { requireAuth, requireRole } from "../middleware/auth.middleware";
 
 const router = Router();
@@ -15,6 +15,9 @@ router.get("/me", requireAuth(), getMe);
 
 // Optional logout (token revocation)
 router.post("/logout", requireAuth(), postLogout);
+
+// Admin-only: list agent users
+router.get("/agents", requireAuth(), requireRole("admin"), getAgents);
 
 export default router;
 

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createUser, issueTokens, sanitizeUser, verifyCredentials, PublicUser, revokeToken } from "../services/auth.service";
+import { createUser, issueTokens, sanitizeUser, verifyCredentials, PublicUser, revokeToken, listAgents } from "../services/auth.service";
 import { registerSchema, loginSchema } from "../schemas/auth.schema";
 import { hashPassword } from "../utils/password";
 
@@ -7,9 +7,9 @@ type AuthedRequest = Request & { user?: PublicUser; tokenId?: string };
 
 export async function postRegister(req: Request, res: Response) {
   try {
-    const { email, password, role } = registerSchema.parse(req.body);
+    const { email, password, role, fullName } = registerSchema.parse(req.body);
     const passwordHash = await hashPassword(password);
-    const user = await createUser({ email, passwordHash, role });
+    const user = await createUser({ email, passwordHash, role, fullName });
     return res.status(201).json(user);
   } catch (err: any) {
     if (err?.message === "User already exists") {
@@ -41,6 +41,15 @@ export async function postLogout(req: AuthedRequest, res: Response) {
   const tokenId = req.tokenId;
   if (tokenId) revokeToken(tokenId);
   return res.status(204).send();
+}
+
+export async function getAgents(_req: AuthedRequest, res: Response) {
+  try {
+    const agents = await listAgents();
+    return res.json({ agents });
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "Failed to list agents" });
+  }
 }
 
 

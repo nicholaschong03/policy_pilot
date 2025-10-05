@@ -5,12 +5,22 @@ export interface UserRecord {
   email: string;
   passwordHash: string;
   role: UserRole;
+  full_name?: string;
 }
 
 export interface PublicUser {
   id: string;
   email: string;
   role: UserRole;
+  full_name?: string;
+}
+
+export interface UserListItem {
+  id: string;
+  email: string;
+  role: UserRole;
+  full_name?: string;
+  created_at?: string;
 }
 
 
