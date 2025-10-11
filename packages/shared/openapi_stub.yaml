@@ -10,6 +10,17 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  schemas:
+    KBFile:
+      type: object
+      properties:
+        id: { type: string, description: Stored filename (unique id) }
+        title: { type: string, description: Original filename }
+        type:
+          type: string
+          enum: [PDF, MD, TXT, XLSX, OTHER]
+        uploadDate: { type: string, description: YYYY-MM-DD }
+        size: { type: integer, format: int64, description: Size in bytes }
 tags:
   - name: auth
     description: Authentication & session
@@ -142,12 +153,53 @@ paths:
             schema:
               type: object
               properties:
-                file:
-                  type: string
-                  format: binary
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201':
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  files:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/KBFile'
+
+  /kb/files:
+    get:
+      tags: [kb]
+      summary: List uploaded files
       responses:
         '200':
-          description: Uploaded
+          description: Files
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  files:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/KBFile'
+
+  /kb/files/{filename}:
+    delete:
+      tags: [kb]
+      summary: Delete a stored file by filename
+      parameters:
+        - in: path
+          name: filename
+          required: true
+          schema:
+            type: string
+      responses:
+        '204': { description: No Content }
 
   /kb/ingest/{docId}:
     post:

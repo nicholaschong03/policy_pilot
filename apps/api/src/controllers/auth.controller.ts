@@ -3,6 +3,8 @@ import { createUser, issueTokens, sanitizeUser, verifyCredentials, PublicUser, r
 import { registerSchema, loginSchema } from "../schemas/auth.schema";
 import { hashPassword } from "../utils/password";
 
+import { deleteUser } from "../services/auth.service";
+
 type AuthedRequest = Request & { user?: PublicUser; tokenId?: string };
 
 export async function postRegister(req: Request, res: Response) {
@@ -43,13 +45,5 @@ export async function postLogout(req: AuthedRequest, res: Response) {
   return res.status(204).send();
 }
 
-export async function getAgents(_req: AuthedRequest, res: Response) {
-  try {
-    const agents = await listAgents();
-    return res.json({ agents });
-  } catch (err: any) {
-    return res.status(500).json({ error: err?.message || "Failed to list agents" });
-  }
-}
 
 

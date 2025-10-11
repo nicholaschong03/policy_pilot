@@ -26,12 +26,14 @@ import chatRoutes from "./routes/chat.routes";
 import kbRoutes from "./routes/kb.routes";
 import ticketsRoutes from "./routes/tickets.routes";
 import authRoutes from "./routes/auth.routes";
+import agentRoutes from "./routes/agent.routes";
 import { initAuth } from "./services/auth.service";
 
 app.use("/chat", chatRoutes);
-app.use("/", kbRoutes); // exposes GET /search
+app.use("/kb", kbRoutes);
 app.use("/tickets", ticketsRoutes);
 app.use("/auth", authRoutes);
+app.use("/agent", agentRoutes);
 
 const port = process.env.PORT || 3000;
 app.listen(port, async () => {

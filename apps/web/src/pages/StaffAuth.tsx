@@ -15,21 +15,21 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-    
+
     const { error, role } = await signIn(email, password);
-    
+
     if (!error) {
       if (role === 'admin') {
         navigate('/admin');
       } else {
-        navigate('/staff');
+        navigate('/chat/dashboard');
       }
     }
-    
+
     setIsLoading(false);
   };
 
@@ -78,8 +78,8 @@ const Auth = () => {
                 />
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full premium-button"
                 disabled={isLoading}
               >

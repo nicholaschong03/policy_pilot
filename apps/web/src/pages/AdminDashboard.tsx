@@ -1,11 +1,26 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, MessageSquare, Clock, TrendingUp, LogOut } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { Users, MessageSquare, Clock, TrendingUp } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const [agentCount, setAgentCount] = useState<number | null>(null);
+  const API = import.meta.env.VITE_API_BASE || "http://localhost:3000";
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await axios.get<{ count: number }>(`${API}/agent/count`);
+        setAgentCount(data.count);
+        const el = document.getElementById("total-agents-count");
+        if (el) el.textContent = String(data.count);
+      } catch {}
+    })();
+  }, [API]);
   const { signOut } = useAuth();
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -23,7 +38,6 @@ const AdminDashboard = () => {
               navigate('/');
             }}
           >
-            <LogOut className="mr-2 h-4 w-4" />
             Logout
           </Button>
         </div>
@@ -36,8 +50,11 @@ const AdminDashboard = () => {
             <Users className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">+2 from last month</p>
+            <div className="text-2xl font-bold">
+              {/* Fetched from API */}
+              <span id="total-agents-count">--</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Total registered agents</p>
           </CardContent>
         </Card>
 
@@ -75,62 +92,75 @@ const AdminDashboard = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest system events and updates</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">New agent registered</p>
-                  <p className="text-xs text-muted-foreground">2 minutes ago</p>
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle>Admin Features</CardTitle>
+          <CardDescription>Access all administrative functions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <Link to="/admin/users" className="block">
+              <Card className="p-6 hover:bg-muted/50 cursor-pointer transition-colors h-full">
+                <div className="text-center space-y-2">
+                  <Users className="h-8 w-8 mx-auto text-primary" />
+                  <p className="text-sm font-medium">User Management</p>
+                  <p className="text-xs text-muted-foreground">Create agents/admins, reset passwords</p>
                 </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Knowledge base updated</p>
-                  <p className="text-xs text-muted-foreground">15 minutes ago</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">System maintenance scheduled</p>
-                  <p className="text-xs text-muted-foreground">1 hour ago</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </Card>
+            </Link>
 
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common administrative tasks</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Card className="p-4 hover:bg-muted/50 cursor-pointer transition-colors" onClick={() => navigate('/admin/users')}>
-                <div className="text-center">
-                  <Users className="h-8 w-8 mx-auto mb-2 text-primary" />
-                  <p className="text-sm font-medium">Manage Users</p>
+            <Link to="/chat/knowledge-base" className="block">
+              <Card className="p-6 hover:bg-muted/50 cursor-pointer transition-colors h-full">
+                <div className="text-center space-y-2">
+                  <MessageSquare className="h-8 w-8 mx-auto text-primary" />
+                  <p className="text-sm font-medium">Knowledge Base</p>
+                  <p className="text-xs text-muted-foreground">Upload & manage documents</p>
                 </div>
               </Card>
-              <Card className="p-4 hover:bg-muted/50 cursor-pointer transition-colors">
-                <div className="text-center">
-                  <MessageSquare className="h-8 w-8 mx-auto mb-2 text-primary" />
-                  <p className="text-sm font-medium">View Reports</p>
+            </Link>
+
+            <Link to="/admin/settings" className="block">
+              <Card className="p-6 hover:bg-muted/50 cursor-pointer transition-colors h-full">
+                <div className="text-center space-y-2">
+                  <Clock className="h-8 w-8 mx-auto text-primary" />
+                  <p className="text-sm font-medium">System Settings</p>
+                  <p className="text-xs text-muted-foreground">LLM keys & SLA policies</p>
                 </div>
               </Card>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </Link>
+
+            <Link to="/admin/analytics" className="block">
+              <Card className="p-6 hover:bg-muted/50 cursor-pointer transition-colors h-full">
+                <div className="text-center space-y-2">
+                  <TrendingUp className="h-8 w-8 mx-auto text-primary" />
+                  <p className="text-sm font-medium">Analytics</p>
+                  <p className="text-xs text-muted-foreground">Ticket volume & resolution metrics</p>
+                </div>
+              </Card>
+            </Link>
+
+            <Link to="/chat" className="block">
+              <Card className="p-6 hover:bg-muted/50 cursor-pointer transition-colors h-full">
+                <div className="text-center space-y-2">
+                  <MessageSquare className="h-8 w-8 mx-auto text-primary" />
+                  <p className="text-sm font-medium">AI Chat</p>
+                  <p className="text-xs text-muted-foreground">AI Policy Assistant</p>
+                </div>
+              </Card>
+            </Link>
+
+            <Link to="/chat/triage" className="block">
+              <Card className="p-6 hover:bg-muted/50 cursor-pointer transition-colors h-full">
+                <div className="text-center space-y-2">
+                  <Users className="h-8 w-8 mx-auto text-primary" />
+                  <p className="text-sm font-medium">Triage</p>
+                  <p className="text-xs text-muted-foreground">Prioritize & assign tickets</p>
+                </div>
+              </Card>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

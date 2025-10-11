@@ -12,8 +12,13 @@ import Chat from "./pages/Chat";
 import Triage from "./pages/Triage";
 import KB from "./pages/KB";
 import NotFound from "./pages/NotFound";
-import AdminDashboard from "./pages/adminDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import UserManagement from "./pages/UserManagement";
+import SystemSettings from "./pages/SystemSettings";
+import Analytics from "./pages/Analytics";
+import AgentDashboard from "./pages/AgentDashboard";
+import TicketDetails from "./pages/TicketDetails";
+import AgentKB from "./pages/AgentKB";
 
 const queryClient = new QueryClient();
 
@@ -27,23 +32,26 @@ const App = () => (
           <Routes>
             {/* Public route */}
             <Route path="/" element={<Index />} />
-            
+
             {/* Staff authentication */}
             <Route path="/staff-login" element={<StaffAuth />} />
-            
+
             {/* Protected staff routes */}
-            <Route path="/staff" element={
+            <Route path="/chat" element={
               <ProtectedRoute>
                 <Layout />
               </ProtectedRoute>
             }>
               <Route index element={<Chat />} />
+              <Route path="dashboard" element={<AgentDashboard />} />
+              <Route path="tickets/:id" element={<TicketDetails />} />
               <Route path="triage" element={<Triage />} />
               <Route path="knowledge-base" element={
                 <ProtectedRoute adminOnly>
                   <KB />
                 </ProtectedRoute>
               } />
+              <Route path="kb" element={<AgentKB />} />
             </Route>
 
             {/* Protected admin route */}
@@ -59,7 +67,21 @@ const App = () => (
                 <UserManagement />
               </ProtectedRoute>
             } />
-            
+
+            {/* Protected admin settings route */}
+            <Route path="/admin/settings" element={
+              <ProtectedRoute adminOnly>
+                <SystemSettings />
+              </ProtectedRoute>
+            } />
+
+            {/* Protected admin analytics route */}
+            <Route path="/admin/analytics" element={
+              <ProtectedRoute adminOnly>
+                <Analytics />
+              </ProtectedRoute>
+            } />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

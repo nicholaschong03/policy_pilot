@@ -60,4 +60,16 @@ export async function listUsersByRole(role: UserRole): Promise<UserListItem[]> {
   }));
 }
 
+export async function deleteUserById(id: string): Promise<void> {
+  await query("DELETE FROM users WHERE id=$1", [id]);
+}
+
+export async function countUsersByRole(role: UserRole): Promise<number> {
+  const { rows } = await query<{ count: number }>(
+    "SELECT COUNT(*)::int as count FROM users WHERE role=$1",
+    [role]
+  );
+  return rows[0]?.count ?? 0;
+}
+
 

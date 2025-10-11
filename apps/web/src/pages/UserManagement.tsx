@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,40 +17,43 @@ const UserManagement = () => {
   const navigate = useNavigate();
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [agentToDelete, setAgentToDelete] = useState<{ id: string; name: string; email: string } | null>(null);
 
   const [agents, setAgents] = useState<Array<{ id: string; name: string; email: string; role: string; createdAt?: string }>>([]);
 
   const API = import.meta.env.VITE_API_BASE || "http://localhost:3000";
 
+  const loadAgents = useCallback(async () => {
+    try {
+      const { data } = await axios.get<{ agents: { id: string; email: string; role: string; full_name?: string; created_at?: string }[] }>(
+        `${API}/agent`
+      );
+      const mapped = data.agents.map((a) => ({
+        id: a.id,
+        name: a.full_name || "",
+        email: a.email,
+        role: a.role,
+        createdAt: a.created_at ? new Date(a.created_at).toLocaleDateString() : undefined,
+      }));
+      setAgents(mapped);
+    } catch (err: any) {
+      toast({
+        title: "Failed to load agents",
+        description: err?.response?.data?.error || "",
+        variant: "destructive",
+      });
+    }
+  }, [API]);
+
   useEffect(() => {
-    const loadAgents = async () => {
-      try {
-        const { data } = await axios.get<{ agents: { id: string; email: string; role: string; full_name?: string; created_at?: string }[] }>(
-          `${API}/auth/agents`
-        );
-        const mapped = data.agents.map((a) => ({
-          id: a.id,
-          name: a.full_name || "",
-          email: a.email,
-          role: a.role,
-          createdAt: a.created_at ? new Date(a.created_at).toLocaleDateString() : undefined,
-        }));
-        setAgents(mapped);
-      } catch (err: any) {
-        toast({
-          title: "Failed to load agents",
-          description: err?.response?.data?.error || "",
-          variant: "destructive",
-        });
-      }
-    };
     loadAgents();
-  }, []);
+  }, [loadAgents]);
 
   const handleAddAgent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
@@ -58,7 +61,7 @@ const UserManagement = () => {
 
     try {
       const { error } = await signUp(email, password, fullName, 'agent');
-      
+
       if (error) {
         toast({
           title: "Failed to add agent",
@@ -70,8 +73,8 @@ const UserManagement = () => {
           title: "Agent added successfully",
           description: `${fullName} has been registered as an agent.`,
         });
+        await loadAgents();
         setIsAddUserOpen(false);
-        // In a real app, you'd refresh the agents list here
       }
     } catch (error) {
       toast({
@@ -84,12 +87,30 @@ const UserManagement = () => {
     }
   };
 
-  const handleDeleteAgent = (agentId: string) => {
-    setAgents(agents.filter(agent => agent.id !== agentId));
-    toast({
-      title: "Agent removed",
-      description: "The agent has been removed from the system.",
-    });
+  const confirmDeleteAgent = (agent: { id: string; name: string; email: string }) => {
+    setAgentToDelete(agent);
+    setIsDeleteOpen(true);
+  };
+
+  const handleDeleteAgent = async () => {
+    if (!agentToDelete) return;
+    try {
+      await axios.delete(`${API}/agent/${agentToDelete.id}`);
+      toast({
+        title: "Agent removed",
+        description: `${agentToDelete.email} has been removed.`,
+      });
+      await loadAgents();
+    } catch (err: any) {
+      toast({
+        title: "Failed to delete agent",
+        description: err?.response?.data?.error || "",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleteOpen(false);
+      setAgentToDelete(null);
+    }
   };
 
   return (
@@ -197,7 +218,7 @@ const UserManagement = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDeleteAgent(agent.id)}
+                      onClick={() => confirmDeleteAgent(agent)}
                       className="text-destructive hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -209,6 +230,25 @@ const UserManagement = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent className="glass-card">
+          <DialogHeader>
+            <DialogTitle>Delete Agent</DialogTitle>
+            <DialogDescription>
+              {agentToDelete ? `Are you sure you want to delete ${agentToDelete.email}? This action cannot be undone.` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={() => setIsDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" className="glass-button bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDeleteAgent}>
+              Confirm Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

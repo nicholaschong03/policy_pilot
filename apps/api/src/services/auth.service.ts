@@ -77,12 +77,12 @@ export async function getUserByIdAsync(id: string): Promise<PublicUser | null> {
   return await getPublicUserById(id);
 }
 
-export function issueTokens(user: PublicUser): {access_token: string, role: UserRole, tokenId: string} {
-    const tokenId = crypto.randomUUID();
-    const access_token = jwt.sign({sub: user.id, role: user.role},
-         getJwtSecret(),
-          {expiresIn: "12h", jwtid: tokenId});
-    return {access_token, role: user.role, tokenId};
+export function issueTokens(user: PublicUser): { access_token: string, role: UserRole, tokenId: string } {
+  const tokenId = crypto.randomUUID();
+  const access_token = jwt.sign({ sub: user.id, role: user.role },
+    getJwtSecret(),
+    { expiresIn: "12h", jwtid: tokenId });
+  return { access_token, role: user.role, tokenId };
 }
 
 export function revokeToken(tokenId: string): void {
@@ -105,7 +105,7 @@ export async function initAuth(): Promise<void> {
         await createUser({ email: SEED_ADMIN_EMAIL, passwordHash, role: "admin" });
         // eslint-disable-next-line no-console
         console.log("Seeded admin user (memory)", SEED_ADMIN_EMAIL);
-      } catch {}
+      } catch { }
     }
     return;
   }
@@ -132,5 +132,18 @@ export async function listAgents(): Promise<UserListItem[]> {
   }
   // Most recently created first is not tracked in memory; return as-is
   return items;
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  if (USE_DB) {
+    await ensureUserSchema();
+    const { deleteUserById } = await import("../repos/users.repo.db");
+    await deleteUserById(id);
+    return;
+  }
+  const existing = usersById.get(id);
+  if (!existing) return;
+  usersById.delete(id);
+  usersByEmail.delete(existing.email.toLowerCase());
 }
 

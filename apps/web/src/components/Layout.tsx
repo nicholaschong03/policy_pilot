@@ -7,11 +7,14 @@ import { cn } from "@/lib/utils";
 
 const Layout = () => {
   const { profile, signOut, isAdmin } = useAuth();
-  
+
   const navItems = [
-    { name: "Chat", path: "/staff", icon: MessageSquare },
-    { name: "Triage", path: "/staff/triage", icon: Zap },
-    ...(isAdmin ? [{ name: "KB Manager", path: "/staff/knowledge-base", icon: Database }] : []),
+    { name: "Chat", path: "/chat", icon: MessageSquare },
+    { name: "Triage", path: "/chat/triage", icon: Zap },
+    ...(isAdmin
+      ? [{ name: "KB Manager", path: "/chat/knowledge-base", icon: Database }]
+      : [{ name: "KB", path: "/chat/kb", icon: Database }]
+    ),
   ];
 
   return (
@@ -37,7 +40,7 @@ const Layout = () => {
                   <NavLink
                     key={item.path}
                     to={item.path}
-                    end={item.path === "/"}
+                    end={item.path === "/chat"}
                     className={({ isActive }) =>
                       cn(
                         "flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300",

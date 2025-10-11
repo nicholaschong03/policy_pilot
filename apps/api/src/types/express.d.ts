@@ -5,10 +5,11 @@ declare global {
     interface Request {
       user?: PublicUser;
       tokenId?: string;
+      files?: import("multer").File[];
     }
   }
 }
 
-export {};
+export { };
 
 
