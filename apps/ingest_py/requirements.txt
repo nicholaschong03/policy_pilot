@@ -1,0 +1,5 @@
+flask
+sentence-transformers==2.7.0
+torch
+pymupdf
+numpy

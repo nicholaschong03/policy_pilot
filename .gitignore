@@ -7,5 +7,10 @@ node_modules/
 **/.env
 **/*.env
 
+# venv
+venv
+**/venv
+
+
 # keep a template
 !.env.example

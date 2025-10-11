@@ -35,12 +35,19 @@ app.use("/tickets", ticketsRoutes);
 app.use("/auth", authRoutes);
 app.use("/agent", agentRoutes);
 
+// Run migrations
+import { runKbMigration } from "./bootstrap/kb_migration";
+
 const port = process.env.PORT || 3000;
 app.listen(port, async () => {
   // eslint-disable-next-line no-console
   console.log(`API listening on http://localhost:${port}`);
   console.log(`Swagger docs at http://localhost:${port}/docs`);
   try {
+    if (process.env.DATABASE_URL) {
+      await runKbMigration();
+      console.log("KB tables ready");
+    }
     await initAuth();
   } catch (e) {
     // eslint-disable-next-line no-console
