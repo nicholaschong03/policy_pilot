@@ -5,6 +5,10 @@ import fitz
 import os
 import re
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 app = Flask(__name__)
 MODEL_NAME = os.environ.get("MODEL_NAME", "BAAI/bge-small-en-v1.5")
 model = SentenceTransformer(MODEL_NAME)

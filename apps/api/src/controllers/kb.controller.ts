@@ -7,16 +7,57 @@ import {
 import { KnowledgeBaseFileMeta } from "../types/kb";
 import fs from "fs";
 import { getKbStorageDir } from "../services/kb.service";
+import { insertDoc } from "../repos/kb.repo";
+import { ingestQueue } from "../queues/ingest.queue";
+
+function mapExtToType(filename: string): KnowledgeBaseFileMeta["type"] {
+  const ext = path.extname(filename).replace(".", "").toLowerCase();
+  switch (ext) {
+    case "pdf":
+      return "PDF";
+    case "md":
+    case "markdown":
+      return "MD";
+    case "xlsx":
+    case "xls":
+      return "XLSX";
+    case "txt":
+      return "TXT";
+    default:
+      return "OTHER";
+  }
+}
 
 export async function uploadDocuments(req: Request, res: Response) {
   const files = ((req as any).files as any[]) || [];
-  const uploaded: KnowledgeBaseFileMeta[] = files.map((f) => ({
-    id: path.basename(f.filename),
-    title: path.basename(f.originalname),
-    type: "OTHER",
-    uploadDate: new Date().toISOString().split("T")[0],
-    size: f.size,
-  }));
+  const dir = getKbStorageDir();
+
+  const uploaded: KnowledgeBaseFileMeta[] = [];
+  for (const f of files) {
+    const id = path.basename(f.filename);
+    const title = path.basename(f.originalname);
+    const type = mapExtToType(title);
+    const storagePath = path.join(dir, f.filename);
+
+    await insertDoc({
+      id,
+      title,
+      type,
+      size: f.size,
+      storagePath,
+      status: "uploaded",
+    });
+
+    await ingestQueue.add("ingest", { docId: id, title, type, path: storagePath });
+
+    uploaded.push({
+      id,
+      title,
+      type,
+      uploadDate: new Date().toISOString().split("T")[0],
+      size: f.size,
+    });
+  }
   return res.status(201).json({ files: uploaded });
 }
 
