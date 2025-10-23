@@ -7,6 +7,6 @@ export type IngestJob = {
     path: string,
 }
 
-export const ingestQueue = new Queue<IngestJob>("kb:ingest", {
+export const ingestQueue = new Queue<IngestJob>("kb-ingest", {
     connection: { url: process.env.REDIS_URL || "redis://localhost:6379" }
 })

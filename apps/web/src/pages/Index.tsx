@@ -5,7 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, FileText, MessageCircle, Upload, Shield, Users } from 'lucide-react';
+import { Search, FileText, MessageCircle, Upload, Shield, Users, ExternalLink } from 'lucide-react';
+import axios from 'axios';
+import { toast } from '@/hooks/use-toast';
+
+const API = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
+
+type Citation = { doc: string; section: string; snippet: string };
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,16 +21,55 @@ const Index = () => {
     email: ''
   });
 
-  const handleTicketSubmit = (e: React.FormEvent) => {
+  const [answer, setAnswer] = useState<string>('');
+  const [answerCitations, setAnswerCitations] = useState<Citation[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+  const [ticketLoading, setTicketLoading] = useState<boolean>(false);
+
+  const handleTicketSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement ticket submission
-    console.log('Ticket submitted:', ticketForm);
+    if (!ticketForm.email.trim() || !ticketForm.subject.trim() || !ticketForm.description.trim()) {
+      toast({ title: 'Please fill in all fields' });
+      return;
+    }
+    setTicketLoading(true);
+    try {
+      const payload = {
+        email: ticketForm.email,
+        subject: ticketForm.subject,
+        body: ticketForm.description,
+      };
+      const { data } = await axios.post(`${API}/tickets`, payload);
+      toast({ title: 'Ticket submitted', description: `ID: ${data?.ticket?.id ?? ''}` });
+      setTicketForm({ subject: '', description: '', email: '' });
+    } catch (err: any) {
+      toast({ title: 'Ticket submission failed', description: err?.response?.data?.error || err?.message || '' });
+    } finally {
+      setTicketLoading(false);
+    }
+  };
+
+  const fetchAnswer = async (q: string) => {
+    if (!q.trim()) return;
+    setLoading(true);
+    setError('');
+    setAnswer('');
+    setAnswerCitations([]);
+    try {
+      const { data } = await axios.post(`${API}/chat`, { query: q });
+      setAnswer(data?.answer ?? '');
+      setAnswerCitations(Array.isArray(data?.citations) ? data.citations : []);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to get answer');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement knowledge base search with RAG
-    console.log('Searching:', searchQuery);
+    fetchAnswer(searchQuery);
   };
 
   return (
@@ -132,24 +177,81 @@ const Index = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="input-glass"
                 />
-                <Button type="submit" className="btn-primary w-full">
+                <Button type="submit" disabled={loading} className="btn-primary w-full">
                   <MessageCircle className="h-4 w-4 mr-2" />
-                  Get AI Answer
+                  {loading ? 'Getting answer...' : 'Get AI Answer'}
                 </Button>
               </form>
+              {error && (
+                <p className="text-sm text-red-400 mt-3">{error}</p>
+              )}
+
+              {answer && (
+                <div className="mt-6 space-y-3">
+                  <h4 className="font-medium text-sm text-muted-foreground">Answer</h4>
+                  <div className="glass-card p-4 text-sm leading-relaxed">
+                    {answer}
+                  </div>
+                  {answerCitations.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {answerCitations.map((c, idx) => {
+                        const search = encodeURIComponent((c.snippet || '').slice(0, 50));
+                        const href = `${API}/kb/files/${encodeURIComponent(c.doc)}#search=${search}`;
+                        return (
+                          <a
+                            key={idx}
+                            href={href}
+                            target="_blank"
+                            rel="noreferrer"
+                            title={c.snippet}
+                            className="inline-flex items-center space-x-1 text-xs px-2 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>{`[${idx + 1}] ${c.doc}#${c.section}`}</span>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
               
               {/* Sample FAQ */}
               <div className="mt-6 space-y-3">
                 <h4 className="font-medium text-sm text-muted-foreground">Popular Questions:</h4>
                 <div className="space-y-2">
-                  <Badge variant="outline" className="glass-card border-glass-border/30 cursor-pointer hover:bg-glass/60">
+                  <Badge
+                    onClick={() => {
+                      const q = 'How long can I get refund?';
+                      setSearchQuery(q);
+                      fetchAnswer(q);
+                    }}
+                    variant="outline"
+                    className="glass-card border-glass-border/30 cursor-pointer hover:bg-glass/60"
+                  >
+                    How long can I get refund?
+                  </Badge>
+                  <Badge
+                    onClick={() => {
+                      const q = 'How do I reset my password?';
+                      setSearchQuery(q);
+                      fetchAnswer(q);
+                    }}
+                    variant="outline"
+                    className="glass-card border-glass-border/30 cursor-pointer hover:bg-glass/60"
+                  >
                     How do I reset my password?
                   </Badge>
-                  <Badge variant="outline" className="glass-card border-glass-border/30 cursor-pointer hover:bg-glass/60">
+                  <Badge
+                    onClick={() => {
+                      const q = 'What are your support hours?';
+                      setSearchQuery(q);
+                      fetchAnswer(q);
+                    }}
+                    variant="outline"
+                    className="glass-card border-glass-border/30 cursor-pointer hover:bg-glass/60"
+                  >
                     What are your support hours?
-                  </Badge>
-                  <Badge variant="outline" className="glass-card border-glass-border/30 cursor-pointer hover:bg-glass/60">
-                    How do I update my account?
                   </Badge>
                 </div>
               </div>

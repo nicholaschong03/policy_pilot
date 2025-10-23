@@ -81,7 +81,7 @@ def ingest_endpoint():
 
     raw = extract_text(path, doc_type)
     norm = normalize_text(raw)
-    texts = chunk_text(norm, target_chars=4000, overlap_chars=800)
+    texts = chunk_text(norm, target_chars=1000, overlap_chars=200)
     result = []
     for idx, t in enumerate(texts):
         emb = embed_text(t)

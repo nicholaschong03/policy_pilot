@@ -1,13 +1,10 @@
 import { Request, Response } from "express";
 import path from "path";
-import {
-  deleteKnowledgeBaseFile,
-  listKnowledgeBaseFiles,
-} from "../services/kb.service";
+import { deleteKnowledgeBaseFile } from "../services/kb.service";
 import { KnowledgeBaseFileMeta } from "../types/kb";
 import fs from "fs";
 import { getKbStorageDir } from "../services/kb.service";
-import { insertDoc } from "../repos/kb.repo";
+import { deleteDocReturningPath, insertDoc, listDocs } from "../repos/kb.repo";
 import { ingestQueue } from "../queues/ingest.queue";
 
 function mapExtToType(filename: string): KnowledgeBaseFileMeta["type"] {
@@ -62,13 +59,32 @@ export async function uploadDocuments(req: Request, res: Response) {
 }
 
 export async function listDocuments(_req: Request, res: Response) {
-  const files = await listKnowledgeBaseFiles();
-  return res.json({ files });
+  const rows = await listDocs();
+  return res.json({
+    files: rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      type: (r.type?.toUpperCase?.() as any) || "OTHER",
+      uploadDate: new Date(r.updated_at).toISOString().split("T")[0],
+      size: r.size,
+      status: r.status,
+      error: r.error ?? undefined,
+    })),
+  });
 }
 
 export async function deleteDocument(req: Request, res: Response) {
   const { filename } = req.params as { filename: string };
-  await deleteKnowledgeBaseFile(filename);
+  // Delete DB rows first (kb_chunks cascade via FK), get path to unlink
+  const storagePath = await deleteDocReturningPath(filename);
+  // Attempt to unlink the file; ignore if it is already gone
+  if (storagePath) {
+    try {
+      await fs.promises.unlink(storagePath);
+    } catch (_e) {
+      // swallow ENOENT or other fs errors to keep API idempotent
+    }
+  }
   return res.status(204).send();
 }
 

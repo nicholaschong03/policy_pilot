@@ -13,7 +13,7 @@ interface Document {
   title: string;
   type: "PDF" | "MD" | "TXT" | "XLSX";
   uploadDate: string;
-  status: "Uploaded" | "Processing" | "Ingested";
+  status: "uploaded" | "processing" | "ingested" | "failed";
   size: string;
 }
 
@@ -33,7 +33,7 @@ const KnowledgeBase = () => {
       title: file.name,
       type: getFileType(file.name),
       uploadDate: new Date().toISOString().split('T')[0],
-      status: "Processing",
+      status: "processing",
       size: formatFileSize(file.size)
     }));
     setDocuments(prev => [...newDocs, ...prev]);
@@ -74,7 +74,7 @@ const KnowledgeBase = () => {
 
   const loadDocuments = async () => {
     try {
-      const { data } = await axios.get<{ files: { id: string; title: string; type: Document["type"] | "OTHER"; uploadDate: string; size: number }[] }>(
+      const { data } = await axios.get<{ files: { id: string; title: string; type: Document["type"] | "OTHER"; uploadDate: string; size: number; status?: Document["status"]; error?: string }[] }>(
         `${API}/kb/files`
       );
       const mapped: Document[] = data.files.map((f) => ({
@@ -82,7 +82,7 @@ const KnowledgeBase = () => {
         title: f.title,
         type: f.type === "OTHER" ? getFileType(f.title) : (f.type as Document["type"]),
         uploadDate: f.uploadDate,
-        status: "Processing",
+        status: (f.status ?? "uploaded") as Document["status"],
         size: formatFileSize(f.size),
       }));
       setDocuments(mapped);
@@ -93,6 +93,20 @@ const KnowledgeBase = () => {
 
   useEffect(() => {
     loadDocuments();
+
+    // Poll for status updates while any doc is processing or uploaded
+    const interval = setInterval(() => {
+      setDocuments((current) => {
+        const hasPending = current.some((d) => d.status === "processing" || d.status === "uploaded");
+        if (hasPending) {
+          // Trigger a fetch but don't block the interval tick
+          loadDocuments();
+        }
+        return current;
+      });
+    }, 3000); // 3s polling
+
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -105,12 +119,28 @@ const KnowledgeBase = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    if (status === "Ingested") {
+  const getStatusBadge = (status: Document["status"]) => {
+    if (status === "ingested") {
       return (
         <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
           <CheckCircle className="w-3 h-3 mr-1" />
           Ingested
+        </Badge>
+      );
+    }
+    if (status === "processing") {
+      return (
+        <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+          <Clock className="w-3 h-3 mr-1" />
+          Processing
+        </Badge>
+      );
+    }
+    if (status === "failed") {
+      return (
+        <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
+          <Clock className="w-3 h-3 mr-1" />
+          Failed
         </Badge>
       );
     }

@@ -275,6 +275,36 @@ paths:
                         snippet: { type: string }
                   confidence: { type: number }
                   unanswerable: { type: boolean }
+  
+  /chat/preview:
+    get:
+      tags: [chat]
+      summary: Preview retrieval matches for a query
+      parameters:
+        - in: query
+          name: query
+          schema: { type: string }
+          required: true
+        - in: query
+          name: top_k
+          schema: { type: integer, default: 8 }
+      responses:
+        '200':
+          description: Retrieval results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        doc_id: { type: string }
+                        chunk_index: { type: integer }
+                        text: { type: string }
+                        score: { type: number }
   /tickets/triage:
     post:
       tags: [tickets]
