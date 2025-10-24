@@ -1,5 +1,8 @@
 import { Pool, QueryResult, QueryResultRow } from "pg";
 
+import dotenv from "dotenv";
+dotenv.config();
+
 let pool: Pool | null = null;
 
 export function getDbPool(): Pool {

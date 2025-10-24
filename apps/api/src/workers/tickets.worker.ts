@@ -3,6 +3,9 @@ import { ticketsTriageQueue, type TriageJob } from "../queues/tickets.queue";
 import { classifyTicket } from "../services/triage.service";
 import { query } from "../repos/db";
 
+import dotenv from "dotenv";
+dotenv.config();
+
 const connection = { url: process.env.REDIS_URL || "redis://localhost:6379" };
 
 console.log("Tickets triage worker booting...");
