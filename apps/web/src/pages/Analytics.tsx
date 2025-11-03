@@ -4,35 +4,45 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { TrendingUp, MessageSquare, Bot, User, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { useEffect, useMemo, useState } from "react";
 
 const Analytics = () => {
   const navigate = useNavigate();
-  const ticketVolumeData = [
-    { day: "Mon", tickets: 45 },
-    { day: "Tue", tickets: 52 },
-    { day: "Wed", tickets: 38 },
-    { day: "Thu", tickets: 61 },
-    { day: "Fri", tickets: 55 },
-    { day: "Sat", tickets: 23 },
-    { day: "Sun", tickets: 18 }
-  ];
+  const API = import.meta.env.VITE_API_BASE || "http://localhost:3000";
+  const [loading, setLoading] = useState(true);
+  const [volumeByDay, setVolumeByDay] = useState<{ date: string; count: number }[]>([]);
+  const [categoryDistribution, setCategoryDistribution] = useState<{ name: string; count: number }[]>([]);
+  const [resolutionByDay, setResolutionByDay] = useState<{ date: string; ai: number; human: number }[]>([]);
+  const [resolutionTotals, setResolutionTotals] = useState<{ total: number; ai: number; human: number } | null>(null);
 
-  const categoryData = [
-    { name: "Technical", value: 35, color: "hsl(var(--primary))" },
-    { name: "Billing", value: 25, color: "hsl(var(--secondary))" },
-    { name: "Account", value: 20, color: "hsl(var(--accent))" },
-    { name: "General", value: 20, color: "hsl(var(--muted))" }
-  ];
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await axios.get(`${API}/tickets/admin/analytics`);
+        setVolumeByDay(data.volume_by_day || []);
+        setCategoryDistribution(data.category_distribution || []);
+        setResolutionByDay(data.resolution_by_day || []);
+        setResolutionTotals(data.resolution_totals || null);
+      } catch {}
+      finally {
+        setLoading(false);
+      }
+    })();
+  }, [API]);
 
-  const resolutionData = [
-    { day: "Mon", ai: 32, human: 13 },
-    { day: "Tue", ai: 38, human: 14 },
-    { day: "Wed", ai: 28, human: 10 },
-    { day: "Thu", ai: 45, human: 16 },
-    { day: "Fri", ai: 40, human: 15 },
-    { day: "Sat", ai: 18, human: 5 },
-    { day: "Sun", ai: 14, human: 4 }
-  ];
+  const ticketVolumeData = useMemo(() => {
+    return volumeByDay.map(v => ({ day: v.date.slice(5), tickets: v.count }));
+  }, [volumeByDay]);
+
+  const categoryData = useMemo(() => {
+    const palette = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "hsl(var(--muted))", "#7c3aed", "#22c55e", "#eab308"];
+    return categoryDistribution.map((c, i) => ({ name: c.name, value: c.count, color: palette[i % palette.length] }));
+  }, [categoryDistribution]);
+
+  const resolutionData = useMemo(() => {
+    return resolutionByDay.map(r => ({ day: r.date.slice(5), ai: r.ai, human: r.human }));
+  }, [resolutionByDay]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -61,7 +71,7 @@ const Analytics = () => {
             <MessageSquare className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">292</div>
+            <div className="text-2xl font-bold">{ticketVolumeData.reduce((s, d) => s + d.tickets, 0)}</div>
             <p className="text-xs text-muted-foreground">+12% from last week</p>
           </CardContent>
         </Card>
@@ -72,7 +82,7 @@ const Analytics = () => {
             <Bot className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">73%</div>
+            <div className="text-2xl font-bold">{resolutionTotals && resolutionTotals.total > 0 ? Math.round((resolutionTotals.ai / resolutionTotals.total) * 100) : 0}%</div>
             <p className="text-xs text-muted-foreground">+5% from last week</p>
           </CardContent>
         </Card>
@@ -83,7 +93,7 @@ const Analytics = () => {
             <User className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">27%</div>
+            <div className="text-2xl font-bold">{resolutionTotals && resolutionTotals.total > 0 ? Math.round((resolutionTotals.human / resolutionTotals.total) * 100) : 0}%</div>
             <p className="text-xs text-muted-foreground">-5% from last week</p>
           </CardContent>
         </Card>

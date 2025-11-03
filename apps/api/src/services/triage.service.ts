@@ -11,14 +11,45 @@ export type ClassificationResult = {
 };
 
 const SECURITY_STRONG = [
-  "security", "breach", "hacked", "unauthorized", "compromise", "phishing", "leak", "ransomware"
+  "security", "breach", "hacked", "unauthorized", "compromise",
+  "phishing", "data leak", "leak", "ransomware", "gdpr", "privacy",
+  "personal data", "dpo@", "data deletion", "data removal", "right to be forgotten"
 ];
-const BILLING_STRONG = ["chargeback"];
-const BILLING_WEAK = ["refund", "billing", "invoice", "payment failed", "duplicate charge", "payment"];
-const ACCESS_WEAK = ["login", "password", "reset", "2fa", "mfa", "locked", "access denied"];
-const TECH_WEAK = ["bug", "error", "crash", "down", "not loading", "performance", "timeout"];
-const PRODUCT_WEAK = ["feature", "roadmap", "integration", "api", "pricing plan"];
-const FEEDBACK_WEAK = ["suggestion", "feedback", "survey", "rating", "review"];
+
+const BILLING_STRONG = [
+  "chargeback", "fraudulent charge"
+];
+
+const BILLING_WEAK = [
+  "refund", "billing", "invoice", "payment failed", "duplicate charge",
+  "double charge", "overcharged", "rebill", "reversal", "card declined",
+  "payment", "fpx", "e-wallet", "grabpay", "touch 'n go"
+];
+
+const ACCESS_WEAK = [
+  "login", "sign in", "password", "reset", "2fa", "mfa", "locked",
+  "lockout", "access denied", "new device", "suspicious login"
+];
+
+const TECH_WEAK = [
+  // existing ops/UX + shipping/delivery operational issues folded here
+  "bug", "error", "crash", "down", "not loading", "performance", "timeout",
+  "order not delivered", "delivered but not received", "tracking", "tracking number",
+  "courier", "parcel", "lost package", "delay", "customs delay", "shipping"
+];
+
+const PRODUCT_WEAK = [
+  "feature", "roadmap", "integration", "api", "pricing plan",
+  // listing/compliance
+  "counterfeit", "fake product", "misleading", "prohibited item",
+  "adult content", "illegal", "hate speech", "nudity", "misinformation",
+  "expiry date", "warranty"
+];
+
+const FEEDBACK_WEAK = [
+  "suggestion", "feedback", "survey", "rating", "review",
+  "incentive for review", "spam review", "fake review", "harassment"
+];
 
 function containsAny(text: string, phrases: string[]): boolean {
   return phrases.some((p) => text.includes(p));
@@ -60,7 +91,7 @@ async function llmClassify(subject: string, body: string): Promise<Classificatio
   const key = process.env.GOOGLE_API_KEY;
   const model = process.env.GEMINI_MODEL || "gemini-2.5-flash-latest";
   if (!key) return null;
-  const labels = ["General","Billing","Account_Access","Technical","Security","Product","Feedback"];
+  const labels = ["General", "Billing", "Account_Access", "Technical", "Security", "Product", "Feedback"];
   const prompt = `Classify the following ticket into one of the labels ${labels.join(", ")}.\nReturn strict JSON: {"category":"<label>","priority":"High|Medium|Low","confidence":0.0-1.0}.\nSubject: ${subject}\nBody: ${body}`;
   try {
     const { data } = await axios.post(
@@ -70,7 +101,7 @@ async function llmClassify(subject: string, body: string): Promise<Classificatio
     );
     const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     const json = JSON.parse(text.replace(/```json|```/g, "").trim());
-    if (labels.includes(json.category) && ["High","Medium","Low"].includes(json.priority)) {
+    if (labels.includes(json.category) && ["High", "Medium", "Low"].includes(json.priority)) {
       return {
         category: json.category as Category,
         priority: json.priority as Priority,

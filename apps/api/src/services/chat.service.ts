@@ -3,7 +3,7 @@ import { retrieve } from "./retrieval.service";
 import dotenv from "dotenv";
 dotenv.config();
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash-latest";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-latest";
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
 function buildPrompt(query: string, contexts: { text: string }[]) {
@@ -87,6 +87,6 @@ export async function answerQuery(queryText: string, topK = 8): Promise<{
     }));
     const confidence = hits[0]?.score ?? 0;
     const unanswerable = !answer?.trim();
-  
+
     return { answer, citations, confidence, unanswerable };
   }

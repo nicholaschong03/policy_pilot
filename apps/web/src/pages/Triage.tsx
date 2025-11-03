@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +25,7 @@ const Triage = () => {
   const [body, setBody] = useState("");
   const [result, setResult] = useState<TriageResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const API = import.meta.env.VITE_API_BASE || "http://localhost:3000";
 
   const handleSubmit = async () => {
     if (!subject.trim() || !body.trim()) {
@@ -32,22 +34,28 @@ const Triage = () => {
     }
 
     setIsLoading(true);
-
-    // Simulate AI processing
-    setTimeout(() => {
-      const mockResult: TriageResult = {
-        category: "Account Access",
-        priority: Math.random() > 0.5 ? "High" : Math.random() > 0.3 ? "Medium" : "Low",
-        suggestedReply: `Thank you for contacting us regarding "${subject}". I understand your concern about ${body.toLowerCase().slice(0, 50)}... Based on our policy guidelines, here's how we can help resolve this issue for you.`,
+    try {
+      const { data } = await axios.post(`${API}/tickets/triage`, { subject, body });
+      const action: string = data?.action || "AUTO_ACK_ONLY";
+      const recommendedAction = action === "AUTO_RESOLVE" ? "Auto-Resolve" : action === "ESCALATE" ? "Escalate" : "Auto-Acknowledge";
+      const firstMinutes: number | undefined = data?.sla?.first_response_minutes;
+      const resHours: number | undefined = data?.sla?.resolution_hours;
+      const mapped: TriageResult = {
+        category: data?.category || "General",
+        priority: (data?.priority as "Low" | "Medium" | "High") || "Low",
+        suggestedReply: data?.suggested_reply || "",
         slaInfo: {
-          firstResponse: "2 hours",
-          resolution: "24 hours",
+          firstResponse: typeof firstMinutes === "number" ? `${firstMinutes} minutes` : "--",
+          resolution: typeof resHours === "number" ? `${resHours} hours` : "--",
         },
-        recommendedAction: "Auto-Acknowledge"
+        recommendedAction,
       };
-      setResult(mockResult);
+      setResult(mapped);
+    } catch (err: any) {
+      toast({ title: "Triage failed", description: err?.response?.data?.error || err?.message || "", variant: "destructive" });
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   const handleCopy = (text: string) => {

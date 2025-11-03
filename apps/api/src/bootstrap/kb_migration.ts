@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { getDbPool} from '../repos/db';
+import { getDbPool } from '../repos/db';
 
 export async function runKbMigration(): Promise<void> {
     const pool = getDbPool();
@@ -23,4 +23,17 @@ export async function runKbMigration(): Promise<void> {
     const dropMultiCatPath = path.resolve(__dirname, '../../migrations/006_drop_predicted_categories.sql');
     const dropMultiCatSql = await fs.promises.readFile(dropMultiCatPath, 'utf8');
     await pool.query(dropMultiCatSql);
+
+    const appSettingsPath = path.resolve(__dirname, '../../migrations/007_app_settings.sql');
+    const appSettingsSql = await fs.promises.readFile(appSettingsPath, 'utf8');
+    await pool.query(appSettingsSql);
+
+    // Optional: add first_response_text column (idempotent)
+    const firstRespPath = path.resolve(__dirname, '../../migrations/008_first_response_text.sql');
+    try {
+        const firstRespSql = await fs.promises.readFile(firstRespPath, 'utf8');
+        await pool.query(firstRespSql);
+    } catch {
+        // ignore if file missing
+    }
 }

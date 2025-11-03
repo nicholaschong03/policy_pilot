@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,6 +26,8 @@ const Index = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [ticketLoading, setTicketLoading] = useState<boolean>(false);
+  const [lookupEmail, setLookupEmail] = useState<string>("");
+  const navigate = useNavigate();
 
   const handleTicketSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +74,14 @@ const Index = () => {
     fetchAnswer(searchQuery);
   };
 
+  const handleLookupTickets = () => {
+    if (!lookupEmail.trim()) {
+      toast({ title: 'Please enter your email address' });
+      return;
+    }
+    navigate(`/tickets?email=${encodeURIComponent(lookupEmail)}`);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -83,7 +93,7 @@ const Index = () => {
               PolicyPilot
             </h1>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <Link to="/staff-login">
               <Button variant="outline" className="glass-card border-glass-border/50">
@@ -112,7 +122,7 @@ const Index = () => {
       {/* Main Features Grid */}
       <section className="px-6 pb-20">
         <div className="mx-auto max-w-7xl grid lg:grid-cols-2 gap-8">
-          
+
           {/* Submit Ticket Card */}
           <Card className="glass-card">
             <CardHeader>
@@ -215,7 +225,7 @@ const Index = () => {
                   )}
                 </div>
               )}
-              
+
               {/* Sample FAQ */}
               <div className="mt-6 space-y-3">
                 <h4 className="font-medium text-sm text-muted-foreground">Popular Questions:</h4>
@@ -267,16 +277,23 @@ const Index = () => {
             <CardHeader>
               <CardTitle className="text-center">Track Your Ticket</CardTitle>
               <CardDescription className="text-center">
-                Enter your email and ticket ID to check the status
+                Enter your email to see your tickets, then select one to view details
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex space-x-4">
-                <Input placeholder="Email address" className="input-glass" />
-                <Input placeholder="Ticket ID" className="input-glass" />
-                <Button className="btn-primary whitespace-nowrap">
-                  Track Status
-                </Button>
+              <div className="flex flex-col gap-4">
+                <div className="flex gap-4">
+                  <Input
+                    placeholder="Email address"
+                    className="input-glass"
+                    type="email"
+                    value={lookupEmail}
+                    onChange={(e) => setLookupEmail(e.target.value)}
+                  />
+                  <Button className="btn-primary whitespace-nowrap" onClick={handleLookupTickets}>
+                    Find My Tickets
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

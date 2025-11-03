@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Key, Clock, ArrowLeft } from "lucide-react";
+import { Settings, Key, Clock, ArrowLeft, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -18,9 +18,9 @@ const SystemSettings = () => {
   });
 
   const [slaSettings, setSlaSettings] = useState({
-    responseTime: "30",
-    resolutionTime: "24",
-    escalationTime: "2"
+    High: { first_response_minutes: 60, resolution_hours: 24, escalation_hours: 2 },
+    Medium: { first_response_minutes: 240, resolution_hours: 72, escalation_hours: 8 },
+    Low: { first_response_minutes: 1440, resolution_hours: 168, escalation_hours: 24 }
   });
 
   const handleSaveLLMSettings = () => {
@@ -30,11 +30,36 @@ const SystemSettings = () => {
     });
   };
 
-  const handleSaveSLASettings = () => {
-    toast({
-      title: "SLA Settings Saved",
-      description: "Service level agreement policies have been updated."
-    });
+  const handleSaveSLASettings = async () => {
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/settings/sla`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(slaSettings)
+      });
+      toast({ title: "SLA Settings Saved", description: "Service level agreement policies have been updated." });
+    } catch (e) {
+      toast({ title: "Failed to save", description: String(e), variant: "destructive" as any });
+    }
+  };
+
+  const handleResetDefaultSLA = async () => {
+    const defaults = {
+      High: { first_response_minutes: 60, resolution_hours: 24, escalation_hours: 2 },
+      Medium: { first_response_minutes: 240, resolution_hours: 72, escalation_hours: 8 },
+      Low: { first_response_minutes: 1440, resolution_hours: 168, escalation_hours: 24 }
+    };
+    setSlaSettings(defaults);
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/settings/sla`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(defaults)
+      });
+      toast({ title: "SLA Reset", description: "Defaults restored." });
+    } catch (e) {
+      toast({ title: "Failed to reset", description: String(e), variant: "destructive" as any });
+    }
   };
 
   return (
@@ -124,48 +149,52 @@ const SystemSettings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="response">Initial Response Time (minutes)</Label>
-                <Input
-                  id="response"
-                  type="number"
-                  placeholder="30"
-                  value={slaSettings.responseTime}
-                  onChange={(e) => setSlaSettings({ ...slaSettings, responseTime: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Time allowed for first response to a new ticket
-                </p>
+              {(["High","Medium","Low"] as const).map((p) => (
+                <div key={p} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                  <div>
+                    <Label>{p} Priority - First Response (minutes)</Label>
+                    <Input
+                      type="number"
+                      value={slaSettings[p].first_response_minutes}
+                      onChange={(e) => setSlaSettings({
+                        ...slaSettings,
+                        [p]: { ...slaSettings[p], first_response_minutes: Number(e.target.value) }
+                      })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Resolution (hours)</Label>
+                    <Input
+                      type="number"
+                      value={slaSettings[p].resolution_hours}
+                      onChange={(e) => setSlaSettings({
+                        ...slaSettings,
+                        [p]: { ...slaSettings[p], resolution_hours: Number(e.target.value) }
+                      })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Escalation (hours)</Label>
+                    <Input
+                      type="number"
+                      value={slaSettings[p].escalation_hours}
+                      onChange={(e) => setSlaSettings({
+                        ...slaSettings,
+                        [p]: { ...slaSettings[p], escalation_hours: Number(e.target.value) }
+                      })}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleSaveSLASettings} className="w-full">Save {p}</Button>
+                    <Button variant="outline" onClick={handleResetDefaultSLA} className="w-full">
+                      <RotateCcw className="w-4 h-4 mr-1"/> Reset Default
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              <div className="pt-2">
+                <Button onClick={handleSaveSLASettings} className="w-full">Save All SLA Policies</Button>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="resolution">Resolution Time (hours)</Label>
-                <Input
-                  id="resolution"
-                  type="number"
-                  placeholder="24"
-                  value={slaSettings.resolutionTime}
-                  onChange={(e) => setSlaSettings({ ...slaSettings, resolutionTime: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Time allowed to resolve a ticket
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="escalation">Escalation Time (hours)</Label>
-                <Input
-                  id="escalation"
-                  type="number"
-                  placeholder="2"
-                  value={slaSettings.escalationTime}
-                  onChange={(e) => setSlaSettings({ ...slaSettings, escalationTime: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Time before unresolved ticket is escalated
-                </p>
-              </div>
-              <Button onClick={handleSaveSLASettings} className="w-full">
-                Save SLA Policies
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>

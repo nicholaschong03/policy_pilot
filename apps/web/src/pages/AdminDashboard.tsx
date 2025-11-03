@@ -9,6 +9,9 @@ import { useAuth } from "@/hooks/useAuth";
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [agentCount, setAgentCount] = useState<number | null>(null);
+  const [activeTicketsCount, setActiveTicketsCount] = useState<number | null>(null);
+  const [avgFirstResponseMinutes, setAvgFirstResponseMinutes] = useState<number | null>(null);
+  const [resolutionRatePercent, setResolutionRatePercent] = useState<number | null>(null);
   const API = import.meta.env.VITE_API_BASE || "http://localhost:3000";
 
   useEffect(() => {
@@ -18,6 +21,19 @@ const AdminDashboard = () => {
         setAgentCount(data.count);
         const el = document.getElementById("total-agents-count");
         if (el) el.textContent = String(data.count);
+      } catch {}
+    })();
+    (async () => {
+      try {
+        const { data } = await axios.get<{ count: number }>(`${API}/tickets/admin/count/active`);
+        setActiveTicketsCount(data.count);
+      } catch {}
+    })();
+    (async () => {
+      try {
+        const { data } = await axios.get<{ avg_first_response_minutes: number | null; resolution_rate_percent: number }>(`${API}/tickets/admin/stats`);
+        setAvgFirstResponseMinutes(data.avg_first_response_minutes);
+        setResolutionRatePercent(data.resolution_rate_percent);
       } catch {}
     })();
   }, [API]);
@@ -64,7 +80,7 @@ const AdminDashboard = () => {
             <MessageSquare className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">45</div>
+            <div className="text-2xl font-bold">{activeTicketsCount ?? '--'}</div>
             <p className="text-xs text-muted-foreground">+12% from yesterday</p>
           </CardContent>
         </Card>
@@ -75,7 +91,7 @@ const AdminDashboard = () => {
             <Clock className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2.5m</div>
+            <div className="text-2xl font-bold">{avgFirstResponseMinutes !== null ? `${avgFirstResponseMinutes.toFixed(1)}m` : '--'}</div>
             <p className="text-xs text-muted-foreground">-8% from last week</p>
           </CardContent>
         </Card>
@@ -86,7 +102,7 @@ const AdminDashboard = () => {
             <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">94%</div>
+            <div className="text-2xl font-bold">{resolutionRatePercent !== null ? `${resolutionRatePercent.toFixed(0)}%` : '--'}</div>
             <p className="text-xs text-muted-foreground">+3% from last month</p>
           </CardContent>
         </Card>
@@ -135,6 +151,16 @@ const AdminDashboard = () => {
                   <TrendingUp className="h-8 w-8 mx-auto text-primary" />
                   <p className="text-sm font-medium">Analytics</p>
                   <p className="text-xs text-muted-foreground">Ticket volume & resolution metrics</p>
+                </div>
+              </Card>
+            </Link>
+
+            <Link to="/chat/dashboard" className="block">
+              <Card className="p-6 hover:bg-muted/50 cursor-pointer transition-colors h-full">
+                <div className="text-center space-y-2">
+                  <MessageSquare className="h-8 w-8 mx-auto text-primary" />
+                  <p className="text-sm font-medium">Handle Tickets</p>
+                  <p className="text-xs text-muted-foreground">Go to Team/My queues</p>
                 </div>
               </Card>
             </Link>

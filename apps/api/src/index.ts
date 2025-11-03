@@ -27,6 +27,7 @@ import kbRoutes from "./routes/kb.routes";
 import ticketsRoutes from "./routes/tickets.routes";
 import authRoutes from "./routes/auth.routes";
 import agentRoutes from "./routes/agent.routes";
+import settingsRoutes from "./routes/settings.routes";
 import { initAuth } from "./services/auth.service";
 
 app.use("/chat", chatRoutes);
@@ -34,6 +35,7 @@ app.use("/kb", kbRoutes);
 app.use("/tickets", ticketsRoutes);
 app.use("/auth", authRoutes);
 app.use("/agent", agentRoutes);
+app.use("/settings", settingsRoutes);
 
 // Run migrations
 import { runKbMigration } from "./bootstrap/kb_migration";

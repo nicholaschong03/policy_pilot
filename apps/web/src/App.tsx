@@ -19,6 +19,7 @@ import Analytics from "./pages/Analytics";
 import AgentDashboard from "./pages/AgentDashboard";
 import TicketDetails from "./pages/TicketDetails";
 import AgentKB from "./pages/AgentKB";
+import CustomerTickets from "./pages/CustomerTickets";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,8 @@ const App = () => (
           <Routes>
             {/* Public route */}
             <Route path="/" element={<Index />} />
+            <Route path="/tickets" element={<CustomerTickets />} />
+            <Route path="/tickets/:id" element={<TicketDetails />} />
 
             {/* Staff authentication */}
             <Route path="/staff-login" element={<StaffAuth />} />

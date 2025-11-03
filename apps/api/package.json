@@ -6,7 +6,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev:worker:ingest": "nodemon --watch src --exec ts-node src/workers/ingest.worker.ts",
-    "dev:worker:tickets": "nodemon --watch src --exec ts-node src/workers/tickets.worker.ts"
+    "dev:worker:tickets": "nodemon --watch src --exec ts-node src/workers/tickets.worker.ts",
+    "dev:worker:sla": "nodemon --watch src --exec ts-node src/workers/sla.worker.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
